@@ -77,11 +77,10 @@ const viewRoles = () => {
 };
 
 const viewEmployees = () => {
-  console.log("Confirmed View All Employees");
   let roleDepartmentQuery = `SELECT roles.id, roles.title, roles.salary, departments.name AS department_name FROM roles INNER JOIN departments ON roles.departments_id = departments.id`;
-  let employeeRoleQuery = `SELECT employees.id, CONCAT_WS(' ', first_name, last_name) AS name, manager_id, roles_departments.title, roles_departments.salary, roles_departments.department_name FROM employees INNER JOIN (${roleDepartmentQuery}) AS roles_departments ON employees.role_id = roles_departments.id`;
-  let query = `SELECT employee_role.id, employee_role.name, employee_role.title, employee_role.salary, employee_role.department_name, CONCAT_WS(' ', manager.first_name, manager.last_name) AS manager FROM (${employeeRoleQuery}) AS employee_role LEFT JOIN employees AS manager ON employee_role.manager_id = manager.id`;
-  
+  let employeeRoleQuery = `SELECT employees.employee_id, CONCAT_WS(' ', first_name, last_name) AS name, manager_id, roles_departments.title, roles_departments.salary, roles_departments.department_name FROM employees INNER JOIN (${roleDepartmentQuery}) AS roles_departments ON employees.role_id = roles_departments.id`;
+  let query = `SELECT employee_role.employee_id, employee_role.name, employee_role.title, employee_role.salary, employee_role.department_name, CONCAT_WS(' ', manager.first_name, manager.last_name) AS manager FROM (${employeeRoleQuery}) AS employee_role LEFT JOIN employees AS manager ON employee_role.manager_id = manager.employee_id`;
+
   connection.query(query, (err, res) => {
     if (err) throw err;
     console.table(res);
@@ -156,78 +155,102 @@ const addRole = () => {
 };
 
 const addEmployee = () => {
-  return (
-    inquirer
-      .prompt([
-        {
-          type: "input",
-          name: "first_name",
-          message: "Enter the employees first name:",
-          validate: (firstNameInput) => {
-            if (firstNameInput) {
-              return true;
-            } else {
-              console.log("Please enter a first name!");
-              return false;
-            }
-          },
+  return inquirer
+    .prompt([
+      {
+        type: "input",
+        name: "first_name",
+        message: "Enter the employees first name:",
+        validate: (firstNameInput) => {
+          if (firstNameInput) {
+            return true;
+          } else {
+            console.log("Please enter a first name!");
+            return false;
+          }
         },
-        {
-          type: "input",
-          name: "last_name",
-          message: "Enter the employees last name:",
-          validate: (lastNameInput) => {
-            if (lastNameInput) {
-              return true;
-            } else {
-              console.log("Please enter a last name!");
-              return false;
-            }
-          },
+      },
+      {
+        type: "input",
+        name: "last_name",
+        message: "Enter the employees last name:",
+        validate: (lastNameInput) => {
+          if (lastNameInput) {
+            return true;
+          } else {
+            console.log("Please enter a last name!");
+            return false;
+          }
         },
-        {
-          type: "list",
-          name: "role_id",
-          message: "Select a role:",
-          choices: () =>
-            connection
-              .promise()
-              .query(`SELECT * FROM roles`)
-              .then(([res]) =>
-                res.map(({ id, title }) => ({ name: title, value: id }))
-              ),
-        },
-        {
-          type: "list",
-          name: "manager_id",
-          message: "Select a Manager:",
-          choices: () =>
-            connection
-              .promise()
-              .query(
-                `SELECT id, CONCAT_WS(' ', first_name, last_name) AS name FROM employees`
-              )
-              .then(([res]) => {
-                const managerChoices = res.map(({ id, name }) => ({
-                  name,
-                  value: id,
-                }));
-                managerChoices.push({ name: "none", value: null });
-                return managerChoices;
-              }),
-        },
-      ])
-      .then((employee) => {
-        const query = `INSERT INTO employees SET ?`;
-        connection.query(query, employee, (err, res) => {
-          if (err) throw err;
-          promptChoices();
-        });
-      })
-  );
+      },
+      {
+        type: "list",
+        name: "role_id",
+        message: "Select a role:",
+        choices: () =>
+          connection
+            .promise()
+            .query(`SELECT * FROM roles`)
+            .then(([res]) =>
+              res.map(({ id, title }) => ({ name: title, value: id }))
+            ),
+      },
+      {
+        type: "list",
+        name: "manager_id",
+        message: "Select a Manager:",
+        choices: () =>
+          connection
+            .promise()
+            .query(
+              `SELECT employee_id, CONCAT_WS(' ', first_name, last_name) AS name FROM employees`
+            )
+            .then(([res]) => {
+              const managerChoices = res.map(({ id, name }) => ({
+                name,
+                value: id,
+              }));
+              managerChoices.push({ name: "none", value: null });
+              return managerChoices;
+            }),
+      },
+    ])
+    .then((employee) => {
+      const query = `INSERT INTO employees SET ?`;
+      connection.query(query, employee, (err, res) => {
+        if (err) throw err;
+        promptChoices();
+      });
+    });
 };
 
 const updateEmployeeRole = () => {
-  console.log("Confirmed Update Employee Role");
-  promptChoices();
+  return inquirer.prompt([
+    {
+      type: "list",
+      name: "employee_id",
+      message: "Select employee who's role you would like to update:",
+      choices: () =>
+        connection
+          .promise()
+          .query(
+            `SELECT employee_id, CONCAT_WS(' ', first_name, last_name) AS name FROM employees`
+          )
+          .then(([res]) => {
+            const employeeChoices = res.map(({ id, name }) => ({
+              name,
+              value: id,
+            }));
+            employeeChoices.push({ name: "none", value: null });
+            return employeeChoices;
+          }),
+    },
+  ]);
+  //   .then((data) => {
+  //     const query = `INSERT INTO employees SET ?`;
+  //     connection.query(query, data, (err, res) => {
+  //       if (err) throw err;
+  //   promptChoices();
+  // });
+  //   });
 };
