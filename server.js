@@ -6,6 +6,7 @@ const mysql = require('mysql2');
 const connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
+    database: 'company_db',
     password: 'NEW_password1'
 });
 
@@ -28,7 +29,8 @@ initialChoice = () => {
                 'Add a Department',
                 'Add a Role',
                 'Add An Employee',
-                'Update Employee Role']
+                'Update Employee Role',
+                'Exit']
         }
     )
 };
@@ -59,14 +61,19 @@ promptChoices = () => {
                 updateEmployeeRole();
             }
             else {
-                return null;
+                connection.end();
             }
         })
 };
 
 viewDepartments = () => {
-    console.log('Confirmed View All Departments');
-    // connect table
+    let query = `SELECT id AS ID, name AS Department FROM departments;`;
+
+    connection.query(query, (err, res) => {
+        if (err) throw err;
+        console.table(res);
+        promptChoices();
+    });
 };
 
 viewRoles = () => {
