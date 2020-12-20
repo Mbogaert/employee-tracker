@@ -17,7 +17,7 @@ connection.connect(err => {
     promptChoices();
 });
 
-initialChoice = () => {
+const initialChoice = () => {
     return inquirer.prompt(
         {
             type: 'list',
@@ -35,7 +35,7 @@ initialChoice = () => {
     )
 };
 
-promptChoices = () => {
+const promptChoices = () => {
     return initialChoice()
         .then(({ choice }) => {
             if (choice === 'View All Departments') {
@@ -49,7 +49,6 @@ promptChoices = () => {
             }
             else if (choice === 'Add a Department') {
                 return addDepartment()
-                // .then(({ department }) => new Department(department));
             }
             else if (choice === 'Add a Role') {
                 addRole();
@@ -66,7 +65,7 @@ promptChoices = () => {
         })
 };
 
-viewDepartments = () => {
+const viewDepartments = () => {
     let query = `SELECT id AS ID, name AS Department FROM departments;`;
 
     connection.query(query, (err, res) => {
@@ -76,9 +75,9 @@ viewDepartments = () => {
     });
 };
 
-viewRoles = () => {
-    let query = `SELECT title AS Job, id AS ID, departments_id AS Department, salary AS Salary FROM roles`;
-    // make the departments appear as they name
+const viewRoles = () => {
+    let query = `SELECT title AS Job, roles.id AS ID, departments.name AS Department, salary AS Salary FROM roles INNER JOIN departments ON roles.departments_id = departments.id;`;
+    // make the departments appear as the name not the ID number
 
     connection.query(query, (err, res) => {
         if (err) throw err;
@@ -87,16 +86,25 @@ viewRoles = () => {
     })
 };
 
-viewEmployees = () => {
+const viewEmployees = () => {
     console.log('Confirmed View All Employees');
-    // connect table
+    let roleDepartmentQuery = `SELECT roles.id, roles.title, roles.salary, departments.name AS department_name FROM roles INNER JOIN departments ON roles.departments_id = departments.id`;
+    let employeeRoleQuery = `SELECT employees.id, CONCAT_WS(' ', first_name, last_name) AS name, manager_id, roles_departments.title, roles_departments.salary, roles_departments.department_name FROM employees INNER JOIN (${roleDepartmentQuery}) AS roles_departments ON employees.role_id = roles_departments.id`;
+    let query = `SELECT employee_role.id, employee_role.name, employee_role.title, employee_role.salary, employee_role.department_name, CONCAT_WS(' ', manager.first_name, manager.last_name) AS manager FROM (${employeeRoleQuery}) AS employee_role LEFT JOIN employees AS manager ON employee_role.manager_id = manager.id`;
+    // CONCAT names, also how to Select from multiple places - department, manager
+
+    connection.query(query, (err, res) => {
+        if (err) throw err;
+        console.table(res);
+        promptChoices();
+    })
 };
 
-addDepartment = () => {
+const addDepartment = () => {
     return inquirer.prompt(
         {
             type: 'input',
-            name: 'department',
+            name: 'name',
             message: 'Enter the new departments name:',
             validate: departmentInput => {
                 if (departmentInput) {
@@ -107,15 +115,21 @@ addDepartment = () => {
                 }
             }
         }
-        // Add to the table still
     )
+        .then((department) => {
+            const query = `INSERT INTO departments SET ?`
+            connection.query(query, department, (err, res) => {
+                if (err) throw err;
+                promptChoices();
+            })
+        })
 };
 
-addRole = () => {
+const addRole = () => {
     return inquirer.prompt([
         {
             type: 'input',
-            name: 'role',
+            name: 'title',
             message: 'Enter the name of the role:',
             validate: roleInput => {
                 if (roleInput) {
@@ -126,23 +140,33 @@ addRole = () => {
                 }
             }
         },
-
         {
             type: 'input',
             name: 'salary',
             message: 'Enter the salary for this role:'
+        },
+        {
+            type: 'list',
+            name: 'departments_id',
+            message: 'Select a Department:',
+            choices: () => connection.promise().query(`SELECT * FROM departments`).then(([res]) => res.map(({ id, name }) => ({ name, value: id })))
         }
-        // department which would be connected to the department table 
-
         // add role to the database
     ])
+        .then((role) => {
+            const query = `INSERT INTO roles SET ?`
+            connection.query(query, role, (err, res) => {
+                if (err) throw err;
+                promptChoices();
+            })
+        })
 };
 
-addEmployee = () => {
+const addEmployee = () => {
     return inquirer.prompt([
         {
             type: 'input',
-            name: 'firstName',
+            name: 'first_name',
             message: 'Enter the employees first name:',
             validate: firstNameInput => {
                 if (firstNameInput) {
@@ -155,7 +179,7 @@ addEmployee = () => {
         },
         {
             type: 'input',
-            name: 'lastName',
+            name: 'last_name',
             message: 'Enter the employees last name:',
             validate: lastNameInput => {
                 if (lastNameInput) {
@@ -165,17 +189,35 @@ addEmployee = () => {
                     return false;
                 }
             }
+        },
+        {
+            type: 'list',
+            name: 'role_id',
+            message: 'Select a role:',
+            choices: () => connection.promise().query(`SELECT * FROM roles`).then(([res]) => res.map(({ id, title }) => ({ name: title, value: id })))
+        },
+        {
+            type: 'list',
+            name: 'manager_id',
+            message: 'Select a Manager:',
+            choices: () => connection.promise().query(`SELECT id, CONCAT_WS(' ', first_name, last_name) AS name FROM employees`).then(([res]) => {
+                const managerChoices = res.map(({ id, name }) => ({ name, value: id }))
+                managerChoices.push({ name: 'none', value: null })
+                return managerChoices;
+            })
         }
-        // role which will be based on the connection to the table
-
-        // manager that is connected to the employee table
-
-        // add to the employee table
     ])
+    // add to the employee table
+    .then((employee) => {
+        const query = `INSERT INTO employees SET ?`
+        connection.query(query, employee, (err, res) => {
+            if (err) throw err;
+            promptChoices();
+        })
+    })
 };
 
-updateEmployeeRole = () => {
+const updateEmployeeRole = () => {
     console.log('Confirmed Update Employee Role');
+    promptChoices();
 }
-
-// promptChoices();
