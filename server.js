@@ -1,9 +1,20 @@
 const inquirer = require('inquirer');
-// mysql connections
-// const mysql = require('mysql2');
 
-// connect to database
-// figure this out
+// mysql connections
+const mysql = require('mysql2');
+
+const connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'NEW_password1'
+});
+
+connection.connect(err => {
+    if (err)
+        throw err;
+    console.log('Connected!');
+    promptChoices();
+});
 
 initialChoice = () => {
     return inquirer.prompt(
@@ -36,7 +47,7 @@ promptChoices = () => {
             }
             else if (choice === 'Add a Department') {
                 return addDepartment()
-                    // .then(({ department }) => new Department(department));
+                // .then(({ department }) => new Department(department));
             }
             else if (choice === 'Add a Role') {
                 addRole();
@@ -154,4 +165,4 @@ updateEmployeeRole = () => {
     console.log('Confirmed Update Employee Role');
 }
 
-promptChoices();
+// promptChoices();
