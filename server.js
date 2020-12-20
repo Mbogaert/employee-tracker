@@ -243,8 +243,22 @@ const updateEmployeeRole = () => {
             }));
             employeeChoices.push({ name: "none", value: null });
             return employeeChoices;
-          }),
+          })
     },
+    {
+        type: "list",
+        name: "role_id",
+        message: "Select a new role for this employee:",
+        choices: () => connection.promise().query(`SELECT id, title AS role FROM roles`
+        )
+        .then(([res]) => {
+            const roleChoices = res.map(({ id, role }) => ({
+                role,
+                value: id,
+            }));
+            return roleChoices;
+        })
+    }
   ]);
   //   .then((data) => {
   //     const query = `INSERT INTO employees SET ?`;
