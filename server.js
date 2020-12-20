@@ -77,8 +77,14 @@ viewDepartments = () => {
 };
 
 viewRoles = () => {
-    console.log('Confirmed View All Roles');
-    // connect table
+    let query = `SELECT title AS Job, id AS ID, departments_id AS Department, salary AS Salary FROM roles`;
+    // make the departments appear as they name
+
+    connection.query(query, (err, res) => {
+        if (err) throw err;
+        console.table(res);
+        promptChoices();
+    })
 };
 
 viewEmployees = () => {
