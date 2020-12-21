@@ -247,13 +247,13 @@ const updateEmployeeRole = () => {
     },
     {
         type: "list",
-        name: "role_id",
+        name: "title",
         message: "Select a new role for this employee:",
-        choices: () => connection.promise().query(`SELECT id, title AS role FROM roles`
+        choices: () => connection.promise().query(`SELECT title AS name FROM roles`
         )
         .then(([res]) => {
-            const roleChoices = res.map(({ id, role }) => ({
-                role,
+            const roleChoices = res.map(({ id, name }) => ({
+                name,
                 value: id,
             }));
             return roleChoices;
