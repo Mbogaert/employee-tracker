@@ -259,7 +259,11 @@ const updateEmployeeRole = () => {
             return roleChoices;
         })
     }
-  ]);
+  ])
+  .then(answer => {
+    console.log(answer.employee_id + ' ' + answer.title);
+})
+
   //   .then((data) => {
   //     const query = `INSERT INTO employees SET ?`;
   //     connection.query(query, data, (err, res) => {
