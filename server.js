@@ -224,8 +224,8 @@ const addEmployee = () => {
     });
 };
 
-async function updateEmployeeRole() {
-const employee = await
+const updateEmployeeRole = () => {
+  return (
     inquirer
       .prompt([
         {
@@ -243,10 +243,10 @@ const employee = await
                   name,
                   value: id,
                 }));
+                employeeChoices.push({ name: "none", value: null });
                 return employeeChoices;
               }),
-        }  ]);
-        const newRole = await inquirer.prompt([
+        },
         {
           type: "list",
           name: "title",
@@ -264,12 +264,18 @@ const employee = await
               }),
         },
       ])
-      .then((newRole, employee) => {
-        let query = `UPDATE employees SET role_id = ${newRole} WHERE employee_id = ${employee}`;
-        connection.query(query, newRole, employee, (err, res) => {
-          if (err) throw err;
-          console.log("working");
-          promptChoices();
-        });
+      .then((answer) => {
+        console.log(answer);
+      
+      // .then((answer) => {
+      //   let employee = answer.employee_id;
+      //   let newRole = answer.title;
+      //   let query = `UPDATE employees SET role_id = ${newRole} WHERE employees.employee_id = ${employee}`;
+      //   connection.query(query, answer, (err, res) => {
+      //     if (err) throw err;
+      //     console.log("working");
+      //     promptChoices();
+      //   });
       })
+  );
 };
