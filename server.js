@@ -49,7 +49,7 @@ const promptChoices = () => {
     } else if (choice === "Add An Employee") {
       addEmployee();
     } else if (choice === "Update Employee Role") {
-      updateEmployeeRole();
+      selectEmployee();
     } else {
       connection.end();
     }
@@ -224,58 +224,68 @@ const addEmployee = () => {
     });
 };
 
-const updateEmployeeRole = () => {
-  return (
-    inquirer
-      .prompt([
-        {
-          type: "list",
+async function selectEmployee() {
+  connection.query(`SELECT employee_id, CONCAT_WS(' ', first_name, last_name) AS name FROM employees`,
+  async (err, res) => {
+    if(err) throw err;
+    const { employee_id } = await inquirer.prompt([
+      {
+        type: "list",
           name: "employee_id",
           message: "Select employee who's role you would like to update:",
-          choices: () =>
-            connection
-              .promise()
-              .query(
-                `SELECT employee_id, CONCAT_WS(' ', first_name, last_name) AS name FROM employees`
-              )
-              .then(([res]) => {
-                const employeeChoices = res.map(({ id, name }) => ({
-                  name,
-                  value: id,
-                }));
-                employeeChoices.push({ name: "none", value: null });
-                return employeeChoices;
-              }),
-        },
-        {
-          type: "list",
+          choices: () => res.map((res) => res.name)
+      }
+    ])
+    connection.query(`SELECT title AS name FROM roles`,
+  async (err, res) => {
+    if(err) throw err;
+    const { title } = await inquirer.prompt([
+      {
+        type: "list",
           name: "title",
           message: "Select a new role for this employee:",
-          choices: () =>
-            connection
-              .promise()
-              .query(`SELECT title AS name FROM roles`)
-              .then(([res]) => {
-                const roleChoices = res.map(({ id, name }) => ({
-                  name,
-                  value: id,
-                }));
-                return roleChoices;
-              }),
-        },
-      ])
-      .then((answer) => {
-        console.log(answer);
+          choices: () =>  res.map((res) => res.name)
+      }
+    ])
+    console.log(title, employee_id);
+    // .then((employee_id, title) => {
+    //   let query = `UPDATE employees SET role_id = ${title} WHERE employees.employee_id = ${employee_id}`;
+    //   connection.query(query, employee_id, title, (err, res) => {
+    //     if (err) throw err;
+    //     console.log("working");
+    //     promptChoices();
+    //   });
+    // })
+  })
+  })
+}
+
+// async function updateEmployeeRole() {
+//   // const employee = await selectEmployee();
+
+//   connection.query(`SELECT title AS name FROM roles`,
+//   async (err, res) => {
+//     if(err) throw err;
+//     const { title } = await inquirer.prompt([
+//       {
+//         type: "list",
+//           name: "title",
+//           message: "Select a new role for this employee:",
+//           choices: () =>  res.map((res) => res.name)
+//       }
+//     ])
+//     console.log(title);
+//   })
+// }
+
       
       // .then((answer) => {
       //   let employee = answer.employee_id;
       //   let newRole = answer.title;
       //   let query = `UPDATE employees SET role_id = ${newRole} WHERE employees.employee_id = ${employee}`;
       //   connection.query(query, answer, (err, res) => {
-      //     if (err) throw err;
-      //     console.log("working");
-      //     promptChoices();
-      //   });
-      })
-  );
-};
+        //   if (err) throw err;
+        //   console.log("working");
+        //   promptChoices();
+        // });
+
